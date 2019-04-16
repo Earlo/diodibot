@@ -48,7 +48,9 @@ def clip(bot, update):
     # bot.send_message(chat_id=update.message.chat_id, text='Help!')
 
     start = time.time()
-    print("Recording from {}".format(start))
+    sender = update.message.from_user
+    sendertext = "{} {} @{}".format(sender.first_name, getattr(sender, 'last_name', ''), getattr(sender, 'username', ''))
+    print("{} is recording from {}".format(sendertext, start))
     with open('diodi.mp3', 'wb') as f:
         for block in q:
             f.write(block)
