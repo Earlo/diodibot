@@ -22,7 +22,12 @@ bot.
 import logging
 import time
 import requests
+import threading
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+
+# For recording the audio
+from collections import deque
+q = deque( maxlen=256 )
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -42,20 +47,13 @@ def clip(bot, update):
     """Send a message when the command /help is issued."""
     # bot.send_message(chat_id=update.message.chat_id, text='Help!')
 
-    stream_url = 'https://virta.radiodiodi.fi/mp3'
-    r = requests.get(stream_url, stream=True)
     start = time.time()
     print("Recording from {}".format(start))
     with open('diodi.mp3', 'wb') as f:
-        for block in r.iter_content(1024):
+        for block in q:
             f.write(block)
-            end = time.time()
-            if(end - start > 5):
-                break
-    print("End at from {}".format(end))
-
     with open('diodi.mp3', 'rb') as f:
-        bot.send_audio(update.message.chat_id, f, duration=end - start, performer="Diodi", title="Diodi{}".format(start),  timeout=20)
+        bot.send_audio(update.message.chat_id, f, duration=start, performer="Diodi", title="Diodi{}".format(start),  timeout=20)
 
 
 def error(bot, update):
@@ -89,5 +87,20 @@ def main():
     updater.idle()
 
 
+def listen_to_diodi():
+    stream_url = 'https://virta.radiodiodi.fi/mp3'
+    r = requests.get(stream_url, stream=True)
+    while(1):
+        try:
+            for block in r.iter_content(1024):
+                q.append(block)
+        except (KeyboardInterrupt, SystemExit):
+            break
+        except:
+            pass
+
+
+
 if __name__ == '__main__':
+    threading.Thread(target=listen_to_diodi).start()
     main()

@@ -3,13 +3,6 @@ import requests
 from collections import deque
 
 q = deque( maxlen=256 )
-q.append( 10 )
-q.append( 20 )
-q.append( 30 )
-# deque([ 10, 20, 30 ])
-
-q.append( 40 )
-# deque([ 20, 30, 40 ])
 
 stream_url = 'https://virta.radiodiodi.fi/mp3'
 r = requests.get(stream_url, stream=True)
