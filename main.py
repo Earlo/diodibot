@@ -55,7 +55,8 @@ def clip(bot, update):
         for block in q:
             f.write(block)
     with open('diodi.mp3', 'rb') as f:
-        bot.send_audio(update.message.chat_id, f, duration=start, performer="Diodi", title="Diodi{}".format(start),  timeout=20)
+        # bot.send_audio(update.message.chat_id, f, performer="Diodi", title="Diodi{}".format(start),  timeout=20)
+        bot.send_voice(update.message.chat_id, f, timeout=20)
 
 
 def error(bot, update):
@@ -68,7 +69,7 @@ def main():
     # Create the Updater and pass it your bot's token.
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
-    updater = Updater("719806814:AAGYz51c18jP2nLRBobWx1gpq8KauLmGJio")
+    updater = Updater("890403817:AAEg-CKr7K06KE4YUg4YwfIh3PZw0w4-v_w")
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
