@@ -27,7 +27,8 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 
 # For recording the audio
 from collections import deque
-q = deque( maxlen=256 )
+q = deque( maxlen=514 )
+recordings = {}
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -45,8 +46,6 @@ def start(bot, update):
 
 def clip(bot, update):
     """Send a message when the command /help is issued."""
-    # bot.send_message(chat_id=update.message.chat_id, text='Help!')
-
     start = time.time()
     sender = update.message.from_user
     sendertext = "{} {} @{}".format(sender.first_name, getattr(sender, 'last_name', ''), getattr(sender, 'username', ''))
@@ -55,9 +54,29 @@ def clip(bot, update):
         for block in q:
             f.write(block)
     with open('diodi.mp3', 'rb') as f:
-        # bot.send_audio(update.message.chat_id, f, performer="Diodi", title="Diodi{}".format(start),  timeout=20)
         bot.send_voice(update.message.chat_id, f, timeout=20)
 
+def rec_start(bot, update):
+    sender = update.message.from_user
+    if sender.id in recordings:
+        rec_end(bot, update, recordings[sender.id])
+        del recordings[sender.id]
+    else:
+        sendertext = "{} {} @{}".format(sender.first_name, getattr(sender, 'last_name', ''), getattr(sender, 'username', ''))
+        print("{} started to record".format(sendertext))
+        recordings[sender.id] = deque( maxlen=1280 )
+
+
+def rec_end(bot, update, record):
+    sender = update.message.from_user
+    sendertext = "{} {} @{}".format(sender.first_name, getattr(sender, 'last_name', ''), getattr(sender, 'username', ''))
+    print("{} recorded {} blocks".format(sendertext, len(record)))
+    with open('rec.mp3', 'wb') as f:
+        for block in record:
+            f.write(block)
+    with open('rec.mp3', 'rb') as f:
+        bot.send_voice(update.message.chat_id, f, timeout=20)
+        
 
 def error(bot, update):
     """Log Errors caused by Updates."""
@@ -70,6 +89,7 @@ def main():
     # Make sure to set use_context=True to use the new context based callbacks
     # Post version 12 this will no longer be necessary
     updater = Updater("719806814:AAGYz51c18jP2nLRBobWx1gpq8KauLmGJio")
+    # updater = Updater("890403817:AAEg-CKr7K06KE4YUg4YwfIh3PZw0w4-v_w")
 
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
@@ -77,6 +97,7 @@ def main():
     # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("clip", clip))
+    dp.add_handler(CommandHandler("rec", rec_start))
 
     # log all errors
     dp.add_error_handler(error)
@@ -97,6 +118,8 @@ def listen_to_diodi():
         try:
             for block in r.iter_content(1024):
                 q.append(block)
+                for key in recordings:
+                    recordings[key].append(block)
         except (KeyboardInterrupt, SystemExit):
             break
         except:
